@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "extend-shallow": "^2.0.1",
-    "globby": "^3.0.1",
     "is-valid-glob": "^0.3.0",
     "lazy-cache": "^0.2.3",
     "load-templates": "^0.9.1"

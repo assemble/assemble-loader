@@ -9,37 +9,87 @@
 
 var fs = require('fs');
 var path = require('path');
-var lazy = require('lazy-cache')(require);
-lazy('extend-shallow', 'extend');
-lazy('globby', 'glob');
+var utils = require('./utils');
 
-function loader(app, plural, options) {
-  options = options || {};
-  options.plural = plural;
-  var collection = app[plural] || app.create(plural, options);
+function loader(patterns, options) {
+  var isGlob = utils.isValidGlob(patterns);
 
-  return function (pattern, opts) {
-    opts = lazy.extend({}, options, opts);
-    var files = globFiles(pattern, opts);
-    var len = files.length, i = -1;
+  if (!isGlob && !isView(patterns)) {
+    options = patterns;
+    patterns = null;
+  }
 
-    while (++i < len) {
-      var fp = files[i];
-      var buffer = fs.readFileSync(fp);
-      collection.addView(fp, {
-        path: fp,
-        contents: buffer
-      });
+  return function (collection) {
+    if (!isObject(collection)) {
+      throw new TypeError('expected an object');
+    }
+
+    if (isApp(collection)) {
+      // if this is an instance of `app`, we can add
+      // a custom `load` method to all collections
+      var app = collection;
+
+      // get a reference to the `extendViews` method
+      var fn = app.extendViews;
+
+      app.extendViews = function () {
+        // call the native `extendViews` method
+        var views = fn.apply(app, arguments);
+
+        // add a `load` method to the result of `extendViews`
+        views.load = function () {
+          // here, `this` is an instance of the collection
+          load(this).apply(this, arguments);
+          return this;
+        };
+        return views;
+      };
+      return app;
+    }
+
+    collection.load = load(collection);
+    if (isGlob || isView(patterns)) {
+      return collection.load(patterns, options);
     }
     return collection;
   };
 }
 
-function globFiles(patterns, options) {
-  var opts = lazy.extend({cwd: process.cwd()}, options);
-  return lazy.glob.sync(patterns, opts).map(function (fp) {
-    return path.resolve(opts.cwd, fp);
-  });
+function load(collection) {
+  return function(globs, opts) {
+    opts = utils.extend({}, collection.options, opts);
+    var loader = utils.loader(function (view) {
+      if (!hasContents(view)) {
+        if (typeof view.read === 'function') {
+          view.read(opts);
+        } else {
+          view.contents = fs.readFileSync(view.path);
+        }
+      }
+      collection.addView(view.key, view);
+    });
+    loader.apply(loader, arguments);
+    return collection;
+  };
+}
+
+function isObject(val) {
+  return val && typeof val === 'object'
+    && !Array.isArray(val);
+}
+
+function isApp(val) {
+  return ('extendView' in val)
+    && ('extendViews' in val)
+    && ('viewTypes' in val);
+}
+
+function isView(val) {
+  return isObject(val) && (val.hasOwnProperty('path') || hasContents(val));
+}
+
+function hasContents(val) {
+  return val.hasOwnProperty('contents') || val.hasOwnProperty('content');
 }
 
 /**
