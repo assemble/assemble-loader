@@ -1,0 +1,38 @@
+{
+  "name": "view-loader",
+  "description": "Load views onto custom view collections.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/jonschlinkert/view-loader",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "jonschlinkert/view-loader",
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/view-loader/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "extend-shallow": "^2.0.1",
+    "globby": "^3.0.1",
+    "is-valid-glob": "^0.3.0",
+    "lazy-cache": "^0.2.3",
+    "load-templates": "^0.9.1"
+  },
+  "devDependencies": {
+    "engine-base": "^0.1.2",
+    "engine-handlebars": "^0.6.1",
+    "mocha": "*",
+    "parser-front-matter": "^1.2.5",
+    "should": "*",
+    "templates": "^0.1.15"
+  },
+  "keywords": []
+}
