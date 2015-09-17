@@ -9,87 +9,46 @@
 
 var fs = require('fs');
 var path = require('path');
+var isValid = require('is-valid-glob');
 var utils = require('./utils');
 
-function loader(patterns, options) {
-  var isGlob = utils.isValidGlob(patterns);
-
-  if (!isGlob && !isView(patterns)) {
-    options = patterns;
+function loader(patterns, opts) {
+  var isGlob = isValid(patterns);
+  if (!isGlob) {
+    opts = patterns;
     patterns = null;
   }
 
-  return function (collection) {
-    if (!isObject(collection)) {
-      throw new TypeError('expected an object');
+  return function (app) {
+    app.load = load(app);
+    if (isGlob) {
+      app.load(patterns, opts);
     }
 
-    if (isApp(collection)) {
-      // if this is an instance of `app`, we can add
-      // a custom `load` method to all collections
-      var app = collection;
-
-      // get a reference to the `extendViews` method
-      var fn = app.extendViews;
-
-      app.extendViews = function () {
-        // call the native `extendViews` method
-        var views = fn.apply(app, arguments);
-
-        // add a `load` method to the result of `extendViews`
-        views.load = function () {
-          // here, `this` is an instance of the collection
-          load(this).apply(this, arguments);
-          return this;
-        };
-        return views;
-      };
-      return app;
-    }
-
-    collection.load = load(collection);
-    if (isGlob || isView(patterns)) {
-      return collection.load(patterns, options);
-    }
-    return collection;
+    return function (views) {
+      views.load = load(views);
+    };
   };
 }
 
-function load(collection) {
-  return function(globs, opts) {
-    opts = utils.extend({}, collection.options, opts);
-    var loader = utils.loader(function (view) {
-      if (!hasContents(view)) {
-        if (typeof view.read === 'function') {
-          view.read(opts);
-        } else {
-          view.contents = fs.readFileSync(view.path);
-        }
+function load(views) {
+  return function (globs, opts) {
+    opts = utils.merge({}, views.options, opts);
+
+    var fn = utils.loader(function (view) {
+      var res = utils.mapDest(view.path, opts)[0];
+      view.path = res.src;
+      view.dest = res.dest;
+
+      if (!view.content) {
+        view.contents = fs.readFileSync(view.path);
       }
-      collection.addView(view.key, view);
+      views.addView(view.key, view);
     });
-    loader.apply(loader, arguments);
-    return collection;
+
+    fn.apply(fn, arguments);
+    return views;
   };
-}
-
-function isObject(val) {
-  return val && typeof val === 'object'
-    && !Array.isArray(val);
-}
-
-function isApp(val) {
-  return ('extendView' in val)
-    && ('extendViews' in val)
-    && ('viewTypes' in val);
-}
-
-function isView(val) {
-  return isObject(val) && (val.hasOwnProperty('path') || hasContents(val));
-}
-
-function hasContents(val) {
-  return val.hasOwnProperty('contents') || val.hasOwnProperty('content');
 }
 
 /**
