@@ -1,4 +1,4 @@
-# view-loader [![NPM version](https://badge.fury.io/js/view-loader.svg)](http://badge.fury.io/js/view-loader)
+# assemble-loader [![NPM version](https://badge.fury.io/js/assemble-loader.svg)](http://badge.fury.io/js/assemble-loader)
 
 > Assemble plugin for loading globs of views onto custom view collections. Also works with verb or other Templates.js based applictions.
 
@@ -7,14 +7,14 @@
 Install with [npm](https://www.npmjs.com/)
 
 ```sh
-$ npm i view-loader --save
+$ npm i assemble-loader --save
 ```
 
 ## Usage
 
 ```js
 var assemble = require('assemble');
-var loader = require('view-loader');
+var loader = require('assemble-loader');
 ```
 
 **App instance**
@@ -75,7 +75,7 @@ $ npm i -d && npm test
 
 ## Contributing
 
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/jonschlinkert/view-loader/issues/new).
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/jonschlinkert/assemble-loader/issues/new).
 
 ## Author
 
