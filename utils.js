@@ -1,6 +1,5 @@
 var lazy = require('lazy-cache')(require);
-lazy('is-valid-glob');
-lazy('extend-shallow', 'extend');
+lazy('mixin-deep', 'merge');
 lazy('load-templates', 'loader');
+lazy('map-dest');
 module.exports = lazy;
-
