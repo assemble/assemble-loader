@@ -1,10 +1,3 @@
-/*!
- * view-loader <https://github.com/jonschlinkert/view-loader>
- *
- * Copyright (c) 2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
 'use strict';
 
 var fs = require('fs');

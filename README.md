@@ -1,6 +1,6 @@
 # assemble-loader [![NPM version](https://badge.fury.io/js/assemble-loader.svg)](http://badge.fury.io/js/assemble-loader)
 
-> Assemble plugin for loading globs of views onto custom view collections. Also works with verb or other Templates.js based applictions.
+> Assemble plugin (0.6+) for loading globs of views onto custom view collections. Also works with verb or other Templates.js based applications.
 
 ## Install
 
