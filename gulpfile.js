@@ -3,6 +3,7 @@ var mocha = require('gulp-mocha');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var del = require('rimraf');
+require('jshint-stylish');
 
 gulp.task('coverage', function () {
   return gulp.src(['index.js', 'utils.js'])
