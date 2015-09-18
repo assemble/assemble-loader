@@ -20,6 +20,7 @@ function loader(patterns, opts) {
 
     return function (views) {
       views.load = load(views);
+      return views;
     };
   };
 }
@@ -27,6 +28,9 @@ function loader(patterns, opts) {
 function load(views) {
   return function (globs, opts) {
     opts = utils.merge({}, views.options, opts);
+    if (views.isApp) {
+      views = views.collection(opts);
+    }
 
     var fn = utils.loader(function (view) {
       var res = utils.mapDest(view.path, opts)[0];
@@ -36,6 +40,7 @@ function load(views) {
       if (!view.content) {
         view.contents = fs.readFileSync(view.path);
       }
+
       views.addView(view.key, view);
     });
 
