@@ -17,7 +17,13 @@ describe('loader', function () {
       assert(typeof loader() === 'function');
     });
 
-    it('should decorate load to the collection instance:', function () {
+    it('should decorate `.load` to the app instance', function () {
+      app.use(loader());
+      var collection = app.load('*.js');
+      assert(collection.views.hasOwnProperty('index.js'));
+    });
+
+    it('should decorate `load` to the collection instance:', function () {
       app.use(loader());
 
       app.create('pages');

@@ -1,7 +1,6 @@
 'use strict';
 
 var fs = require('fs');
-var path = require('path');
 var isValid = require('is-valid-glob');
 var utils = require('./utils');
 
@@ -27,24 +26,20 @@ function loader(patterns, opts) {
 
 function load(views) {
   return function (globs, opts) {
-    opts = utils.merge({}, views.options, opts);
+    opts = utils.merge({}, opts, views.options);
     if (views.isApp) {
       views = views.collection(opts);
     }
 
-    var fn = utils.loader(function (view) {
-      var res = utils.mapDest(view.path, opts)[0];
-      view.path = res.src;
-      view.dest = res.dest;
-
-      if (!view.content) {
+    function loadViews(view) {
+      if (!view.contents) {
         view.contents = fs.readFileSync(view.path);
       }
-
       views.addView(view.key, view);
-    });
+    }
 
-    fn.apply(fn, arguments);
+    var fn = utils.loader(loadViews);
+    fn(globs, opts);
     return views;
   };
 }
