@@ -1,5 +1,7 @@
 'use strict';
 
+var fs = require('fs');
+
 /**
  * Lazily required module dependencies
  */
@@ -12,8 +14,11 @@ var utils = require('lazy-cache')(require);
 
 var fn = require;
 require = utils;
+require('file-contents', 'contents');
 require('mixin-deep', 'merge');
 require('load-templates', 'loader');
+require('isobject', 'isObject');
+require('is-valid-glob');
 require = fn;
 
 /**
