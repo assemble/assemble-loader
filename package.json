@@ -1,7 +1,7 @@
 {
   "name": "assemble-loader",
   "description": "Assemble plugin (0.6+) for loading globs of views onto custom view collections. Also works with verb or other Templates.js based applications.",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "homepage": "https://github.com/jonschlinkert/assemble-loader",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/assemble-loader",
@@ -21,9 +21,11 @@
     "test": "mocha"
   },
   "dependencies": {
+    "file-contents": "^0.2.4",
     "is-valid-glob": "^0.3.0",
+    "isobject": "^2.0.0",
     "lazy-cache": "^0.2.3",
-    "load-templates": "^0.9.1",
+    "load-templates": "^0.10.1",
     "mixin-deep": "^1.1.3"
   },
   "devDependencies": {
@@ -36,9 +38,8 @@
     "jshint-stylish": "^2.0.1",
     "mocha": "*",
     "parser-front-matter": "^1.2.5",
-    "rimraf": "^2.4.3",
     "should": "*",
-    "templates": "^0.1.20"
+    "templates": "^0.2.8"
   },
   "keywords": [
     "assemble",

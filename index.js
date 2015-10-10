@@ -1,46 +1,59 @@
 'use strict';
 
-var fs = require('fs');
-var isValid = require('is-valid-glob');
 var utils = require('./utils');
 
-function loader(patterns, opts) {
-  var isGlob = isValid(patterns);
-  if (!isGlob) {
-    opts = patterns;
+function loader(patterns, config) {
+  if (utils.isObject(patterns)) {
+    config = patterns;
     patterns = null;
   }
 
-  return function (app) {
-    app.load = load(app);
-    if (isGlob) {
-      app.load(patterns, opts);
+  config = config || {};
+
+  return function fn(app) {
+    function defaults(options) {
+      config = utils.merge({cwd: ''}, this.options, config);
+      return utils.merge({}, config, options || {});
     }
 
-    return function (views) {
-      views.load = load(views);
-      return views;
-    };
-  };
-}
+    app.define('load', function(patterns, options) {
+      var opts = defaults.call(this, options);
+      var cache = {};
+      var fn = utils.loader(cache, opts);
+      fn.apply(this, arguments);
+      return cache;
+    });
 
-function load(views) {
-  return function (globs, opts) {
-    opts = utils.merge({}, opts, views.options);
-    if (views.isApp) {
-      views = views.collection(opts);
-    }
+    if (!this.isViews) return fn;
 
-    function loadViews(view) {
-      if (!view.contents) {
-        view.contents = fs.readFileSync(view.path);
+    this.mixin('loadView', function(/*filename, options*/) {
+      return this.loadViews.apply(this, arguments);
+    });
+
+    this.mixin('loadViews', function(patterns, options) {
+      var opts = defaults.call(this, options);
+      var load = utils.loader({}, opts, this.addView.bind(this));
+      load.apply(this, arguments);
+      return this;
+    });
+
+    var addViews = this.addViews;
+    this.mixin('addViews', function(views) {
+      if (utils.isValidGlob(views)) {
+        return this.loadViews.apply(this, arguments);
       }
-      views.addView(view.key, view);
-    }
+      return addViews.apply(this, arguments);
+    });
 
-    var fn = utils.loader(loadViews);
-    fn(globs, opts);
-    return views;
+    /**
+     * If a glob pattern is passed on the outer function,
+     * pass it to `loadViews` for the collection
+     */
+
+    if (utils.isValidGlob(patterns)) {
+      this.loadViews(patterns, defaults.call(this));
+    }
+    return this;
   };
 }
 
