@@ -45,6 +45,14 @@ function loader(patterns, config) {
       return addViews.apply(this, arguments);
     });
 
+    var addView = this.addView;
+    this.mixin('addView', function(key) {
+      if (utils.isValidGlob(key) && arguments.length === 1) {
+        return this.loadView.apply(this, arguments);
+      }
+      return addView.apply(this, arguments);
+    });
+
     /**
      * If a glob pattern is passed on the outer function,
      * pass it to `loadViews` for the collection

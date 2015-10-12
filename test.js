@@ -85,7 +85,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty('package.json'));
     });
 
-    it('should add the `load` method to a collection:', function () {
+    it('should add the `loadViews` method to a collection:', function () {
       app.create('pages')
         .use(loader());
 
