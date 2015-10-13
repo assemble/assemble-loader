@@ -26,11 +26,11 @@ function loader(patterns, config) {
 
     if (!this.isViews) return fn;
 
-    this.mixin('loadView', function(/*filename, options*/) {
+    this.define('loadView', function(/*filename, options*/) {
       return this.loadViews.apply(this, arguments);
     });
 
-    this.mixin('loadViews', function(patterns, options) {
+    this.define('loadViews', function(patterns, options) {
       var opts = defaults.call(this, options);
       var load = utils.loader({}, opts, this.addView.bind(this));
       load.apply(this, arguments);
@@ -38,7 +38,7 @@ function loader(patterns, config) {
     });
 
     var addViews = this.addViews;
-    this.mixin('addViews', function(views) {
+    this.define('addViews', function(views) {
       if (utils.isValidGlob(views)) {
         return this.loadViews.apply(this, arguments);
       }
@@ -46,7 +46,7 @@ function loader(patterns, config) {
     });
 
     var addView = this.addView;
-    this.mixin('addView', function(key) {
+    this.define('addView', function(key) {
       if (utils.isValidGlob(key) && arguments.length === 1) {
         return this.loadView.apply(this, arguments);
       }
