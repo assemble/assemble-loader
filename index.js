@@ -38,16 +38,16 @@ function loader(patterns, config) {
     });
 
     var addViews = this.addViews;
-    this.define('addViews', function(views) {
-      if (utils.isValidGlob(views)) {
+    this.define('addViews', function(key, value) {
+      if (utils.isGlob(key, value)) {
         return this.loadViews.apply(this, arguments);
       }
       return addViews.apply(this, arguments);
     });
 
     var addView = this.addView;
-    this.define('addView', function(key) {
-      if (utils.isValidGlob(key) && arguments.length === 1) {
+    this.define('addView', function(key, value) {
+      if (utils.isGlob(key, value)) {
         return this.loadView.apply(this, arguments);
       }
       return addView.apply(this, arguments);

@@ -19,7 +19,15 @@ require('mixin-deep', 'merge');
 require('load-templates', 'loader');
 require('isobject', 'isObject');
 require('is-valid-glob');
+require('has-glob');
 require = fn;
+
+utils.isGlob = function(key, val) {
+  if (typeof val === 'undefined' || utils.isObject(val)) {
+    return utils.hasGlob(key);
+  }
+  return false;
+};
 
 /**
  * Expose utils
