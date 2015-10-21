@@ -1,5 +1,7 @@
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var utils = require('./utils');
 
 function loader(patterns, config) {
@@ -10,24 +12,32 @@ function loader(patterns, config) {
 
   config = config || {};
 
-  return function fn(app) {
+  return function plugin(app) {
     function defaults(options) {
-      config = utils.merge({cwd: ''}, this.options, config);
+      config = utils.merge({cwd: process.cwd()}, this.options, config);
       return utils.merge({}, config, options || {});
     }
 
     app.define('load', function(patterns, options) {
       var opts = defaults.call(this, options);
       var cache = {};
-      var fn = utils.loader(cache, opts);
-      fn.apply(this, arguments);
+      var load = utils.loader(cache, opts);
+      load.apply(this, arguments);
       return cache;
     });
 
-    if (!this.isViews) return fn;
+    if (!this.isViews) return plugin;
 
-    this.define('loadView', function(/*filename, options*/) {
-      return this.loadViews.apply(this, arguments);
+    this.define('loadView', function(filepath, options) {
+      if (utils.hasGlob(filepath)) {
+        throw new Error('loadView does not support globs, only filepaths.');
+      }
+
+      var opts = defaults.call(this, options);
+      var fp = path.resolve(opts.cwd, filepath);
+      return this.addView(fp, {
+        contents: fs.readFileSync(fp)
+      });
     });
 
     this.define('loadViews', function(patterns, options) {
@@ -39,7 +49,7 @@ function loader(patterns, config) {
 
     var addViews = this.addViews;
     this.define('addViews', function(key, value) {
-      if (utils.isGlob(key, value)) {
+      if (utils.isGlob(key, value) || utils.isFilepath(key, value)) {
         return this.loadViews.apply(this, arguments);
       }
       return addViews.apply(this, arguments);
@@ -47,7 +57,7 @@ function loader(patterns, config) {
 
     var addView = this.addView;
     this.define('addView', function(key, value) {
-      if (utils.isGlob(key, value)) {
+      if (utils.isFilepath(key, value)) {
         return this.loadView.apply(this, arguments);
       }
       return addView.apply(this, arguments);
