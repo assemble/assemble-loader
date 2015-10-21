@@ -117,6 +117,19 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty('fixtures/a.txt'));
     });
 
+    it('should not change native behavior with addView:', function () {
+      app.create('pages')
+        .use(loader());
+
+      app.page('a', {content: '...'});
+      app.page('b', {content: '...'});
+      app.page('c', {content: '...'});
+
+      assert(app.views.pages.hasOwnProperty('a'));
+      assert(app.views.pages.hasOwnProperty('b'));
+      assert(app.views.pages.hasOwnProperty('c'));
+    });
+
     it('should not change native behavior with addViews:', function () {
       app.create('pages')
         .use(loader());
