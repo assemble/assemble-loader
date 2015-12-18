@@ -14,8 +14,8 @@ function loader(patterns, config) {
 
   return function plugin(app) {
     function defaults(options) {
-      config = utils.merge({cwd: process.cwd()}, this.options, config);
-      return utils.merge({}, config, options || {});
+      var opts = utils.merge({cwd: process.cwd()}, this.options, config);
+      return utils.merge({}, opts, options || {});
     }
 
     app.define('load', function(patterns, options) {

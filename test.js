@@ -1,46 +1,47 @@
+'use strict';
+
 require('mocha');
 require('should');
-var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
 var App = require('templates');
 var Views = App.Views;
 var loader = require('./');
-var app;
+var app, collection;
 
 function res(fp) {
   return path.resolve(fp);
 }
 
-describe('loader', function () {
-  describe('app plugin', function () {
-    beforeEach(function () {
+describe('loader', function() {
+  describe('app plugin', function() {
+    beforeEach(function() {
       app = new App();
     });
 
-    it('should return a function:', function () {
+    it('should return a function:', function() {
       assert(typeof loader() === 'function');
     });
 
-    it('should decorate `.load` to the app instance', function () {
+    it('should decorate `.load` to the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
       assert(collection.hasOwnProperty(res('index.js')));
     });
 
-    it('should take options on loader', function () {
+    it('should take options on loader', function() {
       app.use(loader({cwd: 'fixtures'}));
       var collection = app.load('*.txt');
       assert(collection.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should take options on load', function () {
+    it('should take options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {cwd: 'fixtures'});
       assert(collection.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should decorate `loadViews` onto collections', function () {
+    it('should decorate `loadViews` onto collections', function() {
       app.use(loader());
       app.create('pages');
 
@@ -48,7 +49,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('index.js')));
     });
 
-    it('should use a cwd defined on the collection:', function () {
+    it('should use a cwd defined on the collection:', function() {
       app.use(loader());
       app.create('pages')
         .option('cwd', 'fixtures')
@@ -58,18 +59,18 @@ describe('loader', function () {
     });
   });
 
-  describe('collection plugin', function () {
-    beforeEach(function () {
+  describe('collection plugin', function() {
+    beforeEach(function() {
       app = new App();
     });
 
-    it('should work as a collection plugin:', function () {
+    it('should work as a collection plugin:', function() {
       app.create('pages')
         .use(loader('*.json'));
       assert(app.views.pages.hasOwnProperty(res('package.json')));
     });
 
-    it('should decorate `load` on the collection:', function () {
+    it('should decorate `load` on the collection:', function() {
       app.create('files')
         .use(loader());
 
@@ -77,7 +78,7 @@ describe('loader', function () {
       assert(files.hasOwnProperty(res('package.json')));
     });
 
-    it('should be chainable:', function () {
+    it('should be chainable:', function() {
       app.create('pages')
         .use(loader('*.json'))
         .use(loader('*.js'));
@@ -85,7 +86,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('package.json')));
     });
 
-    it('should decorate a loadViews method onto the collection:', function () {
+    it('should decorate a loadViews method onto the collection:', function() {
       app.create('pages')
         .use(loader())
         .loadViews('*.json')
@@ -95,7 +96,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('package.json')));
     });
 
-    it('should add the `loadViews` method to a collection:', function () {
+    it('should add the `loadViews` method to a collection:', function() {
       app.create('pages')
         .use(loader());
 
@@ -103,7 +104,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should update `addViews` to load globs:', function () {
+    it('should update `addViews` to load globs:', function() {
       app.create('pages')
         .use(loader());
 
@@ -111,7 +112,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should load globs with app collection methods:', function () {
+    it('should load globs with app collection methods:', function() {
       app.create('pages')
         .use(loader());
 
@@ -119,7 +120,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should load glob arrays with app collection methods:', function () {
+    it('should load glob arrays with app collection methods:', function() {
       app.create('pages')
         .use(loader());
 
@@ -127,7 +128,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should not change native behavior with addView:', function () {
+    it('should not change native behavior with addView:', function() {
       app.create('pages')
         .use(loader());
 
@@ -140,7 +141,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty('c'));
     });
 
-    it('should not change native behavior with addViews:', function () {
+    it('should not change native behavior with addViews:', function() {
       app.create('pages')
         .use(loader());
 
@@ -155,7 +156,7 @@ describe('loader', function () {
       assert(app.views.pages.hasOwnProperty('c'));
     });
 
-    it('should get the contents for a view:', function () {
+    it('should get the contents for a view:', function() {
       app.create('pages')
         .use(loader());
 
@@ -164,11 +165,51 @@ describe('loader', function () {
       assert(page.contents.toString() === 'This is AAA');
     });
 
-    it('should support passing renameKey on the options:', function () {
+    it('should support passing renameKey on the options:', function() {
       app.create('pages')
         .use(loader());
 
       app.pages.loadViews('fixtures/*.txt', {
+        renameKey: function(dest) {
+          return path.basename(dest);
+        }
+      });
+
+      assert(app.views.pages.hasOwnProperty('a.txt'));
+    });
+
+    it('should keep collection options separate:', function() {
+      app.use(loader());
+      app.create('pages');
+      app.create('partials', {viewType: 'partial'});
+      app.create('layouts', {viewType: 'layout'});
+
+      app.on('page', function(view, type) {
+        assert(view.options.viewType.length === 1);
+        assert(view.options.viewType[0] === 'renderable');
+      });
+      app.on('layout', function(view, type) {
+        assert(view.options.viewType.length === 1);
+        assert(view.options.viewType[0] === 'layout');
+      });
+      app.on('partial', function(view, type) {
+        assert(view.options.viewType.length === 1);
+        assert(view.options.viewType[0] === 'partial');
+      });
+
+      app.pages('fixtures/*.txt', {
+        renameKey: function(dest) {
+          return path.basename(dest);
+        }
+      });
+
+      app.layouts('fixtures/*.hbs', {
+        renameKey: function(dest) {
+          return path.basename(dest);
+        }
+      });
+
+      app.partials('fixtures/*.tmpl', {
         renameKey: function(dest) {
           return path.basename(dest);
         }
@@ -181,25 +222,25 @@ describe('loader', function () {
   describe('loadView', function() {
     beforeEach(function() {
       collection = new Views({
-        renameKey: function (key) {
+        renameKey: function(key) {
           return path.basename(key);
         }
       });
       collection.use(loader());
     });
 
-    it('should load a file and add it to `views`:', function () {
+    it('should load a file and add it to `views`:', function() {
       collection.loadView('fixtures/a.tmpl');
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should use a cwd defined on the collection:', function () {
+    it('should use a cwd defined on the collection:', function() {
       collection.option('cwd', 'fixtures');
       collection.loadView('a.tmpl');
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should handle files with no extension:', function () {
+    it('should handle files with no extension:', function() {
       collection.loadView('LICENSE');
       collection.views.should.have.property('LICENSE');
     });
@@ -208,36 +249,36 @@ describe('loader', function () {
   describe('loadViews', function() {
     beforeEach(function() {
       collection = new Views({
-        renameKey: function (key) {
+        renameKey: function(key) {
           return path.basename(key);
         }
       });
 
-      collection.use(loader())
+      collection.use(loader());
     });
 
-    it('should load a view from a filepath:', function () {
+    it('should load a view from a filepath:', function() {
       collection.loadViews('fixtures/a.tmpl');
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should load views from a glob:', function () {
+    it('should load views from a glob:', function() {
       collection.loadViews('fixtures/*.tmpl');
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should load views an array globs:', function () {
+    it('should load views an array globs:', function() {
       collection.loadViews(['fixtures/*.tmpl']);
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should use a cwd defined on the collection:', function () {
+    it('should use a cwd defined on the collection:', function() {
       collection.option('cwd', 'fixtures');
       collection.loadViews('*.tmpl');
       collection.views.should.have.property('a.tmpl');
     });
 
-    it('should handle files with no extension:', function () {
+    it('should handle files with no extension:', function() {
       collection.loadViews('LICENSE');
       collection.views.should.have.property('LICENSE');
     });
