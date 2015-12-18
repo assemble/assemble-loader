@@ -1,7 +1,5 @@
 'use strict';
 
-var fs = require('fs');
-
 /**
  * Lazily required module dependencies
  */
