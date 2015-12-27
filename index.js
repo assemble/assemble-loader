@@ -18,10 +18,15 @@ function loader(patterns, config) {
       return utils.merge({}, opts, options || {});
     }
 
+    var viewFn = this.isApp ? this.view.bind(this) : null;
+    if (!viewFn && this.isViews) {
+      viewFn = this.addView.bind(this);
+    }
+
     app.define('load', function(patterns, options) {
       var opts = defaults.call(this, options);
       var cache = {};
-      var load = utils.loader(cache, opts);
+      var load = utils.loader(cache, opts, viewFn);
       load.apply(this, arguments);
       return cache;
     });

@@ -23,7 +23,7 @@ describe('loader', function() {
       assert(typeof loader() === 'function');
     });
 
-    it('should decorate `.load` to the app instance', function() {
+    it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
       assert(collection.hasOwnProperty(res('index.js')));
