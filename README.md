@@ -7,7 +7,6 @@ Use this as a plugin for [assemble](http://assemble.io), [verb](https://github.c
 - [Install](#install)
 - [Usage](#usage)
 - [Collections](#collections)
-- [Directly load templates](#directly-load-templates)
 - [Related projects](#related-projects)
 - [Running tests](#running-tests)
 - [Contributing](#contributing)
@@ -32,14 +31,15 @@ var loader = require('assemble-loader');
 var app = assemble()
   .use(loader());
 
-// optionally pass glob patterns to the plugin
+// optionally pass glob patterns to the plugin (you can only
+// call the plugin once using this pattern)
 var app = assemble()
   .use(loader('foo/*.hbs'));
 
 // and/or use the `.loadViews()` method added by the plugin
 app.create('pages')
   .use(loader('foo/*.hbs'))
-  .use(loader('bar/*.hbs'))
+  .loadViews('bar/*.hbs')
   .loadViews('baz/*.hbs')
   .loadViews('qux/*.hbs');
 ```
@@ -80,21 +80,6 @@ app.create('posts')
 app.posts
   .load('*.hbs')
   .load('*.txt');
-```
-
-***
-
-## Directly load templates
-
-You can also skip the `load` method and just pass glob patterns directly to the plugin.
-
-```js
-var app = assemble();
-
-app.create('pages')
-  .use(loader('*.hbs'))
-  .use(loader('*.txt'))
-  .use(loader('*.md'));
 ```
 
 ## Related projects
