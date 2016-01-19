@@ -26,19 +26,19 @@ describe('loader', function() {
     it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
-      assert(collection.hasOwnProperty(res('index.js')));
+      assert(collection.hasOwnProperty('index.js'));
     });
 
     it('should take options on loader', function() {
       app.use(loader({cwd: 'fixtures'}));
       var collection = app.load('*.txt');
-      assert(collection.hasOwnProperty(res('fixtures/a.txt')));
+      assert(collection.hasOwnProperty('fixtures/a.txt'));
     });
 
     it('should take options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {cwd: 'fixtures'});
-      assert(collection.hasOwnProperty(res('fixtures/a.txt')));
+      assert(collection.hasOwnProperty('fixtures/a.txt'));
     });
 
     it('should decorate `loadViews` onto collections', function() {
@@ -74,14 +74,16 @@ describe('loader', function() {
       app.create('files')
         .use(loader());
 
-      var files = app.files.load('*.json');
-      assert(files.hasOwnProperty(res('package.json')));
+      app.files.load('*.json');
+      assert(app.views.files.hasOwnProperty(res('package.json')));
     });
 
     it('should be chainable:', function() {
       app.create('pages')
-        .use(loader('*.json'))
-        .use(loader('*.js'));
+        .use(loader())
+        .load('*.json')
+        .load('*.js');
+
       assert(app.views.pages.hasOwnProperty(res('index.js')));
       assert(app.views.pages.hasOwnProperty(res('package.json')));
     });

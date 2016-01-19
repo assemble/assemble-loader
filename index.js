@@ -13,6 +13,8 @@ function loader(patterns, config) {
   config = config || {};
 
   return function plugin(app) {
+    if (this.isRegistered('assemble-loader')) return;
+
     function defaults(options) {
       var opts = utils.merge({cwd: process.cwd()}, this.options, config);
       return utils.merge({}, opts, options || {});
@@ -25,10 +27,10 @@ function loader(patterns, config) {
 
     app.define('load', function(patterns, options) {
       var opts = defaults.call(this, options);
-      var cache = {};
+      var cache = this.isViews ? this.views : {};
       var load = utils.loader(cache, opts, viewFn);
       load.apply(this, arguments);
-      return cache;
+      return this.isViews ? this : cache;
     });
 
     if (!this.isViews) return plugin;
@@ -37,7 +39,6 @@ function loader(patterns, config) {
       if (utils.hasGlob(filepath)) {
         throw new Error('loadView does not support globs, only filepaths.');
       }
-
       var opts = defaults.call(this, options);
       var fp = path.resolve(opts.cwd, filepath);
       return this.addView(fp, {
@@ -76,6 +77,7 @@ function loader(patterns, config) {
     if (utils.isValidGlob(patterns)) {
       this.loadViews(patterns, defaults.call(this));
     }
+
     return this;
   };
 }
