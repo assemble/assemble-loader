@@ -26,19 +26,19 @@ describe('loader', function() {
     it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
-      assert(collection.hasOwnProperty('index.js'));
+      assert(collection.hasOwnProperty(path.resolve('index.js')));
     });
 
     it('should take options on loader', function() {
       app.use(loader({cwd: 'fixtures'}));
       var collection = app.load('*.txt');
-      assert(collection.hasOwnProperty('fixtures/a.txt'));
+      assert(collection.hasOwnProperty(path.resolve('fixtures/a.txt')));
     });
 
     it('should take options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {cwd: 'fixtures'});
-      assert(collection.hasOwnProperty('fixtures/a.txt'));
+      assert(collection.hasOwnProperty(path.resolve('fixtures/a.txt')));
     });
 
     it('should decorate `loadViews` onto collections', function() {
@@ -49,11 +49,27 @@ describe('loader', function() {
       assert(app.views.pages.hasOwnProperty(res('index.js')));
     });
 
-    it('should use a cwd defined on the collection:', function() {
+    it('should use a cwd defined on the collection options:', function() {
       app.use(loader());
       app.create('pages')
         .option('cwd', 'fixtures')
         .loadViews('*.tmpl');
+
+      assert(app.views.pages.hasOwnProperty(res('fixtures/a.tmpl')));
+    });
+
+    it('should use a cwd defined on create:', function() {
+      app.use(loader());
+      app.create('pages', {cwd: 'fixtures'})
+        .loadViews('*.tmpl');
+
+      assert(app.views.pages.hasOwnProperty(res('fixtures/a.tmpl')));
+    });
+
+    it('should use a cwd defined on create with collection loader', function() {
+      app.use(loader());
+      app.create('pages', {cwd: 'fixtures'});
+      app.pages('*.tmpl');
 
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.tmpl')));
     });
@@ -171,11 +187,11 @@ describe('loader', function() {
       app.create('pages')
         .use(loader());
 
-      app.pages.loadViews('fixtures/*.txt', {
-        renameKey: function(dest) {
-          return path.basename(dest);
-        }
+      app.pages.option('renameKey', function(key, file) {
+        return path.basename(key);
       });
+
+      app.pages.loadViews('fixtures/*.txt');
 
       assert(app.views.pages.hasOwnProperty('a.txt'));
     });
@@ -199,23 +215,19 @@ describe('loader', function() {
         assert(view.options.viewType[0] === 'partial');
       });
 
-      app.pages('fixtures/*.txt', {
-        renameKey: function(dest) {
-          return path.basename(dest);
-        }
+      app.pages.option('renameKey', function(key, file) {
+        return path.basename(key);
+      });
+      app.layouts.option('renameKey', function(key, file) {
+        return path.basename(key);
+      });
+      app.partials.option('renameKey', function(key, file) {
+        return path.basename(key);
       });
 
-      app.layouts('fixtures/*.hbs', {
-        renameKey: function(dest) {
-          return path.basename(dest);
-        }
-      });
-
-      app.partials('fixtures/*.tmpl', {
-        renameKey: function(dest) {
-          return path.basename(dest);
-        }
-      });
+      app.pages('fixtures/*.txt');
+      app.layouts('fixtures/*.hbs');
+      app.partials('fixtures/*.tmpl');
 
       assert(app.views.pages.hasOwnProperty('a.txt'));
     });

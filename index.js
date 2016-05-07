@@ -16,7 +16,8 @@ function loader(patterns, config) {
     if (this.isRegistered('assemble-loader')) return;
 
     function defaults(options) {
-      var opts = utils.merge({cwd: process.cwd()}, this.options, config);
+      var opts = utils.merge({cwd: process.cwd()}, config, app.options);
+      opts.cwd = opts.cwd || app.cwd || process.cwd();
       return utils.merge({}, opts, options || {});
     }
 
@@ -26,7 +27,7 @@ function loader(patterns, config) {
     }
 
     app.define('load', function(patterns, options) {
-      var opts = defaults.call(this, options);
+      var opts = defaults(options);
       var cache = this.isViews ? this.views : {};
       var load = utils.loader(cache, opts, viewFn);
       load.apply(this, arguments);
@@ -39,7 +40,7 @@ function loader(patterns, config) {
       if (utils.hasGlob(filepath)) {
         throw new Error('loadView does not support globs, only filepaths.');
       }
-      var opts = defaults.call(this, options);
+      var opts = defaults(options);
       var fp = path.resolve(opts.cwd, filepath);
       return this.addView(fp, {
         contents: fs.readFileSync(fp)
@@ -47,7 +48,7 @@ function loader(patterns, config) {
     });
 
     this.define('loadViews', function(patterns, options) {
-      var opts = defaults.call(this, options);
+      var opts = defaults(options);
       var load = utils.loader({}, opts, this.addView.bind(this));
       load.apply(this, arguments);
       return this;
