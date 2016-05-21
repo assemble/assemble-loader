@@ -17,6 +17,7 @@ describe('loader', function() {
   describe('app plugin', function() {
     beforeEach(function() {
       app = new App();
+      app.isApp = true;
     });
 
     it('should return a function:', function() {
@@ -26,18 +27,29 @@ describe('loader', function() {
     it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
-      assert(collection.hasOwnProperty(path.resolve('index.js')));
+      assert(collection.hasOwnProperty('index.js'));
     });
 
     it('should take options on loader', function() {
       app.use(loader({cwd: 'fixtures'}));
       var collection = app.load('*.txt');
-      assert(collection.hasOwnProperty(path.resolve('fixtures/a.txt')));
+      assert(collection.hasOwnProperty('a.txt'));
     });
 
     it('should take options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {cwd: 'fixtures'});
+      assert(collection.hasOwnProperty('a.txt'));
+    });
+
+    it('should use the renameKey options on load', function() {
+      app.use(loader());
+      var collection = app.load('*.txt', {
+        cwd: 'fixtures',
+        renameKey: function(key) {
+          return path.resolve(key);
+        }
+      });
       assert(collection.hasOwnProperty(path.resolve('fixtures/a.txt')));
     });
 

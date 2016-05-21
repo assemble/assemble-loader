@@ -7,80 +7,134 @@ var utils = require('./utils');
 function loader(patterns, config) {
   if (utils.isObject(patterns)) {
     config = patterns;
-    patterns = null;
+    patterns = undefined;
   }
 
-  config = config || {};
-
   return function plugin(app) {
-    if (this.isRegistered('assemble-loader')) return;
-
-    function defaults(options) {
-      var opts = utils.merge({cwd: process.cwd()}, config, app.options);
-      opts.cwd = opts.cwd || app.cwd || process.cwd();
-      return utils.merge({}, opts, options || {});
+    if (this.isRegistered('assemble-loader')) {
+      return plugin;
     }
 
-    var viewFn = this.isApp ? this.view.bind(this) : null;
-    if (!viewFn && this.isViews) {
-      viewFn = this.addView.bind(this);
+    if (this.isApp) {
+      appLoader(this, config);
     }
 
-    app.define('load', function(patterns, options) {
-      var opts = defaults(options);
-      var cache = this.isViews ? this.views : {};
-      var load = utils.loader(cache, opts, viewFn);
-      load.apply(this, arguments);
-      return this.isViews ? this : cache;
-    });
-
-    if (!this.isViews) return plugin;
-
-    this.define('loadView', function(filepath, options) {
-      if (utils.hasGlob(filepath)) {
-        throw new Error('loadView does not support globs, only filepaths.');
-      }
-      var opts = defaults(options);
-      var fp = path.resolve(opts.cwd, filepath);
-      return this.addView(fp, {
-        contents: fs.readFileSync(fp)
-      });
-    });
-
-    this.define('loadViews', function(patterns, options) {
-      var opts = defaults(options);
-      var load = utils.loader({}, opts, this.addView.bind(this));
-      load.apply(this, arguments);
-      return this;
-    });
-
-    var addViews = this.addViews;
-    this.define('addViews', function(key, value) {
-      if (utils.isGlob(key, value) || utils.isFilepath(key, value)) {
-        return this.loadViews.apply(this, arguments);
-      }
-      return addViews.apply(this, arguments);
-    });
-
-    var addView = this.addView;
-    this.define('addView', function(key, value) {
-      if (utils.isFilepath(key, value)) {
-        return this.loadView.apply(this, arguments);
-      }
-      return addView.apply(this, arguments);
-    });
-
-    /**
-     * If a glob pattern is passed on the outer function,
-     * pass it to `loadViews` for the collection
-     */
+    if (this.isViews) {
+      collectionLoader(this, config);
+    }
 
     if (utils.isValidGlob(patterns)) {
-      this.loadViews(patterns, defaults.call(this));
+      return viewLoader(app, config, patterns);
     }
 
-    return this;
+    return plugin;
   };
+}
+
+/**
+ * If a glob pattern is passed on the outer function, this means the
+ * user wants to load views onto the collection. Example:
+ *
+ * ```js
+ * app.create('pages')
+ *   .use(loader('*.hbs'))
+ * ```
+ *
+ * So we pass the pattern to the `loadViews` function that we create
+ * for the collection in the `collectionLoader` function below.
+ */
+
+function viewLoader(app, config, patterns) {
+  app.loadViews(patterns, createOptions(app, config, {}));
+  return app;
+}
+
+/**
+ * Load views that don't belong to a collection
+ *
+ * @param {Object} `app` top level application instance (e.g. instance of assemble)
+ * @param {Object} `config` Settings passed to the plugin
+ * @return {Object}
+ */
+
+function appLoader(app, config) {
+  var viewFn = app.view;
+
+  app.define('load', function(patterns, options) {
+    var opts = createOptions(app, config, options);
+    var cache = {};
+    var load = utils.loader(cache, opts, viewFn.bind(this));
+    load.apply(this, arguments);
+    return cache;
+  });
+}
+
+/**
+ * Load views onto a collection.
+ *
+ * @param {Object} `collection` Collection instance (.e.g. `pages` or `partials`)
+ * @param {Object} `config` Settings passed to the plugin
+ * @return {Object}
+ */
+
+function collectionLoader(collection, config) {
+  var addViews = collection.addViews;
+  var addView = collection.addView;
+
+  collection.define('addView', function(key, value) {
+    if (utils.isFilepath(key, value)) {
+      return this.loadView.apply(this, arguments);
+    }
+    return addView.apply(this, arguments);
+  });
+
+  collection.define('addViews', function(key, value) {
+    if (utils.isGlob(key, value) || utils.isFilepath(key, value)) {
+      return this.loadViews.apply(this, arguments);
+    }
+    return addViews.apply(this, arguments);
+  });
+
+  collection.define('load', function(patterns, options) {
+    var opts = createOptions(this, config, options);
+    var load = utils.loader(this.views, opts, addView.bind(this));
+    load.apply(this, arguments);
+    return this;
+  });
+
+  collection.define('loadView', function(filepath, options) {
+    if (utils.hasGlob(filepath)) {
+      return this.loadViews.apply(this, arguments);
+    }
+
+    var opts = createOptions(this, config, options);
+    var absolute = path.resolve(opts.cwd, filepath);
+    var buf = null;
+
+    if (utils.exists(absolute)) {
+      buf = fs.readFileSync(absolute);
+    }
+    return this.addView(absolute, {contents: buf});
+  });
+
+  collection.define('loadViews', function(patterns, options) {
+    var opts = createOptions(this, config, options);
+    var load = utils.loader({}, opts, this.addView.bind(this));
+    load.apply(this, arguments);
+    return this;
+  });
+}
+
+/**
+ * Create options from:
+ *   + `config` - settings passed to plugin
+ *   + `app.options` - general instance options
+ *   + `options` - options specifically passed to the method being called
+ */
+
+function createOptions(app, config, options) {
+  var cwd = app.cwd || process.cwd();
+  return utils.extend({cwd: cwd}, config, app.options, options);
 }
 
 /**
