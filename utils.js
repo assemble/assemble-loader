@@ -12,14 +12,35 @@ var utils = require('lazy-cache')(require);
 
 var fn = require;
 require = utils;
-require('file-contents', 'contents');
 require('extend-shallow', 'extend');
+require('file-contents', 'contents');
 require('fs-exists-sync', 'exists');
-require('load-templates', 'loader');
-require('isobject', 'isObject');
-require('is-valid-glob');
 require('has-glob');
+require('is-registered');
+require('is-valid-glob');
+require('is-valid-instance');
+require('isobject', 'isObject');
+require('load-templates', 'loader');
 require = fn;
+
+/**
+ * Return true if app is a valid instance
+ */
+
+utils.isValid = function(app) {
+  if (!utils.isValidInstance(app)) {
+    return false;
+  }
+  if (utils.isRegistered(app, 'assemble-loader')) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Return `true` if the given value is a glob pattern or has a
+ * glob pattern if it's an array
+ */
 
 utils.isGlob = function(key, val) {
   if (typeof val === 'undefined' || utils.isObject(val)) {

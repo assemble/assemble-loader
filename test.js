@@ -21,7 +21,7 @@ describe('loader', function() {
     });
 
     it('should return a function:', function() {
-      assert(typeof loader() === 'function');
+      assert.equal(typeof loader(), 'function');
     });
 
     it('should decorate `.load` onto the app instance', function() {
@@ -192,7 +192,7 @@ describe('loader', function() {
 
       app.pages(['fixtures/*.txt']);
       var page = app.pages.getView('fixtures/a.txt');
-      assert(page.contents.toString() === 'This is AAA');
+      assert.equal(page.contents.toString(), 'This is AAA');
     });
 
     it('should support passing renameKey on the options:', function() {
@@ -215,16 +215,16 @@ describe('loader', function() {
       app.create('layouts', {viewType: 'layout'});
 
       app.on('page', function(view, type) {
-        assert(view.options.viewType.length === 1);
-        assert(view.options.viewType[0] === 'renderable');
+        assert.equal(view.options.viewType.length, 1);
+        assert.equal(view.options.viewType[0], 'renderable');
       });
       app.on('layout', function(view, type) {
-        assert(view.options.viewType.length === 1);
-        assert(view.options.viewType[0] === 'layout');
+        assert.equal(view.options.viewType.length, 1);
+        assert.equal(view.options.viewType[0], 'layout');
       });
       app.on('partial', function(view, type) {
-        assert(view.options.viewType.length === 1);
-        assert(view.options.viewType[0] === 'partial');
+        assert.equal(view.options.viewType.length, 1);
+        assert.equal(view.options.viewType[0], 'partial');
       });
 
       app.pages.option('renameKey', function(key, file) {

@@ -11,15 +11,15 @@ function loader(patterns, config) {
   }
 
   return function plugin(app) {
-    if (this.isRegistered('assemble-loader')) {
+    if (utils.isRegistered(app, 'assemble-loader')) {
       return plugin;
     }
 
-    if (this.isApp) {
+    if (utils.isValidInstance(app)) {
       appLoader(this, config);
     }
 
-    if (this.isViews) {
+    if (utils.isValidInstance(app, ['views', 'items', 'collection'])) {
       collectionLoader(this, config);
     }
 
