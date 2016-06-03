@@ -1,13 +1,9 @@
 'use strict';
 
-/**
- * Lazily required module dependencies
- */
-
 var utils = require('lazy-cache')(require);
 
 /**
- * Trick browserify into recognizing lazy-cached modules
+ * Lazily required module dependencies
  */
 
 var fn = require;
@@ -73,7 +69,7 @@ utils.isOptions = function(val) {
   if (!utils.isObject(val)) {
     return false;
   }
-  if (val.isView || val.isItem) {
+  if (val.isView || val.isItem || val._isVinyl) {
     return false;
   }
   return utils.hasAny(val, ['base', 'cwd']);
