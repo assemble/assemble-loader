@@ -1,6 +1,5 @@
 'use strict';
 
-var fs = require('fs');
 var path = require('path');
 var utils = require('./utils');
 
@@ -11,20 +10,26 @@ function loader(patterns, config) {
   }
 
   return function plugin(app) {
-    if (utils.isRegistered(app, 'assemble-loader')) {
-      return plugin;
-    }
+    if (utils.isRegistered(this, 'assemble-loader')) return;
 
-    if (utils.isValidInstance(app)) {
+    // register the plugin on an "app"
+    if (utils.isValidInstance(this)) {
       appLoader(this, config);
+
+      // if patterns are passed to the plugin, load them now
+      if (utils.isValidGlob(patterns)) {
+        this.load(patterns);
+      }
     }
 
-    if (utils.isValidInstance(app, ['views', 'items', 'collection'])) {
+    // register the plugin on a "collection"
+    if (utils.isValidInstance(this, ['collection'])) {
       collectionLoader(this, config);
-    }
 
-    if (utils.isValidGlob(patterns)) {
-      return viewLoader(app, config, patterns);
+      // if patterns are passed to the plugin, load them now
+      if (utils.isValidGlob(patterns)) {
+        this.load(patterns);
+      }
     }
 
     return plugin;
@@ -32,105 +37,104 @@ function loader(patterns, config) {
 }
 
 /**
- * If a glob pattern is passed on the outer function, this means the
- * user wants to load views onto the collection. Example:
+ * Adds a `.load` method to the "app" instance for loading views that
+ * that don't belong to any particular collection. It just returns the
+ * object of views instead of caching them.
  *
  * ```js
- * app.create('pages')
- *   .use(loader('*.hbs'))
+ * var loader = require('assemble-loader');
+ * var assemble = require('assemble');
+ * var app = assemble();
+ * app.use(loader());
+ *
+ * var views = app.load('foo/*.hbs');
+ * console.log(views);
  * ```
- *
- * So we pass the pattern to the `loadViews` function that we create
- * for the collection in the `collectionLoader` function below.
- */
-
-function viewLoader(app, config, patterns) {
-  app.loadViews(patterns, createOptions(app, config, {}));
-  return app;
-}
-
-/**
- * Load views that don't belong to a collection
- *
- * @param {Object} `app` top level application instance (e.g. instance of assemble)
- * @param {Object} `config` Settings passed to the plugin
- * @return {Object}
+ * @param {Object} `app` application instance (e.g. assemble, verb, etc)
+ * @param {Object} `config` Settings to use when registering the plugin
+ * @return {Object} Returns an object of _un-cached_ views, from a glob, string, array of strings, or objects.
+ * @api public
  */
 
 function appLoader(app, config) {
-  var viewFn = app.view;
-
-  app.define('load', function(patterns, options) {
-    var opts = createOptions(app, config, options);
-    var cache = {};
-    var load = utils.loader(cache, opts, viewFn.bind(this));
-    load.apply(this, arguments);
-    return cache;
-  });
+  app.define('load', load('view', config));
 }
 
+
 /**
- * Load views onto a collection.
- *
- * @param {Object} `collection` Collection instance (.e.g. `pages` or `partials`)
- * @param {Object} `config` Settings passed to the plugin
- * @return {Object}
+ * Collection loaders
  */
 
 function collectionLoader(collection, config) {
-  var addViews = collection.addViews;
-  var addView = collection.addView;
 
-  collection.define('addView', function(key, value) {
-    if (utils.isFilepath(key, value)) {
-      return this.loadView.apply(this, arguments);
-    }
-    var view = addView.apply(this, arguments);
-    return utils.contents.sync(view);
-  });
+  /**
+   * Patches the `.addViews` method to support glob patterns.
+   *
+   * @param {Object|String} `key` View name or object.
+   * @param {Object} `value` View options, when key is a string.
+   * @return {Object}
+   */
 
   collection.define('addViews', function(key, value) {
-    if (utils.isGlob(key, value) || utils.isFilepath(key, value)) {
-      return this.loadViews.apply(this, arguments);
-    }
-    return addViews.apply(this, arguments);
-  });
-
-  collection.define('load', function(patterns, options) {
-    var opts = createOptions(this, config, options);
-    var load = utils.loader(this.views, opts, addView.bind(this));
-    load.apply(this, arguments);
+    this.load.apply(this, arguments);
     return this;
   });
 
   collection.define('loadView', function(filepath, options) {
-    if (utils.hasGlob(filepath)) {
-      return this.loadViews.apply(this, arguments);
-    }
-
-    var opts = createOptions(this, config, options);
-    var absolute = path.resolve(opts.cwd, filepath);
-    return this.addView(absolute, {contents: null});
+    this.load.apply(this, arguments);
+    return this;
   });
 
   collection.define('loadViews', function(patterns, options) {
-    var opts = createOptions(this, config, options);
-    var load = utils.loader({}, opts, this.addView.bind(this));
-    load.apply(this, arguments);
+    this.load.apply(this, arguments);
     return this;
+  });
+
+  collection.define('load', function() {
+    return load('addView', config).apply(this, arguments);
   });
 }
 
 /**
  * Create options from:
- *   + `config` - settings passed to plugin
- *   + `app.options` - general instance options
- *   + `options` - options specifically passed to the method being called
+ *   + `config` - settings passed when registering plugin
+ *   + `app.options` - options set on the instance
+ *   + `options` - options passed when calling a loader method
  */
 
-function createOptions(app, config, options) {
-  var cwd = app.cwd || process.cwd();
-  return utils.extend({cwd: cwd}, config, app.options, options);
+function mergeOptions(app, config, options) {
+  if (utils.isView(options)) options = {};
+  var opts = utils.extend({}, config, app.options, options);
+  opts.cwd = path.resolve(opts.cwd || app.cwd || process.cwd());
+  return opts;
+}
+
+/**
+ * Create a `Loader` instance with a `loaderfn` bound
+ * to the app or collection instance.
+ */
+
+function createLoader(options, fn) {
+  var loader = new utils.Loader(options);
+  return function() {
+    if (!this.isApp) loader.cache = this.views;
+    loader.options.loaderFn = fn.bind(this);
+    loader.load.apply(loader, arguments);
+    return loader.cache;
+  };
+}
+
+/**
+ * Create a function for loading views using the given
+ * `method` on the collection or app.
+ */
+
+function load(method, config) {
+  return function(patterns, options) {
+    var opts = mergeOptions(this, config, options);
+    var loader = createLoader(opts, this[method]);
+    return loader.apply(this, arguments);
+  };
 }
 
 /**

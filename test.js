@@ -7,17 +7,17 @@ var assert = require('assert');
 var App = require('templates');
 var Views = App.Views;
 var loader = require('./');
-var app, collection;
+var collection;
+var app;
 
 function res(fp) {
   return path.resolve(fp);
 }
 
 describe('loader', function() {
-  describe('app plugin', function() {
+  describe('app.load()', function() {
     beforeEach(function() {
       app = new App();
-      app.isApp = true;
     });
 
     it('should return a function:', function() {
@@ -27,30 +27,40 @@ describe('loader', function() {
     it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
       var collection = app.load('*.js');
-      assert(collection.hasOwnProperty('index.js'));
+      assert(collection.hasOwnProperty(res('index.js')));
     });
 
     it('should take options on loader', function() {
       app.use(loader({cwd: 'fixtures'}));
       var collection = app.load('*.txt');
-      assert(collection.hasOwnProperty('a.txt'));
+      assert(collection.hasOwnProperty(res('fixtures/a.txt')));
     });
 
     it('should take options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {cwd: 'fixtures'});
-      assert(collection.hasOwnProperty('a.txt'));
+      assert(collection.hasOwnProperty(res('fixtures/a.txt')));
     });
 
     it('should use the renameKey options on load', function() {
       app.use(loader());
       var collection = app.load('*.txt', {
         cwd: 'fixtures',
-        renameKey: function(key) {
-          return path.resolve(key);
+        renameKey: function(file) {
+          return file.path;
         }
       });
-      assert(collection.hasOwnProperty(path.resolve('fixtures/a.txt')));
+      assert(collection.hasOwnProperty(res('fixtures/a.txt')));
+    });
+  });
+
+  describe('collection.loadViews()', function() {
+    beforeEach(function() {
+      app = new App();
+      app.on('error', function(err) {
+        console.log(err);
+        process.exit(1);
+      });
     });
 
     it('should decorate `loadViews` onto collections', function() {
@@ -87,7 +97,7 @@ describe('loader', function() {
     });
   });
 
-  describe('collection plugin', function() {
+  describe('collection loader function', function() {
     beforeEach(function() {
       app = new App();
     });
@@ -109,16 +119,6 @@ describe('loader', function() {
     it('should be chainable:', function() {
       app.create('pages')
         .use(loader())
-        .load('*.json')
-        .load('*.js');
-
-      assert(app.views.pages.hasOwnProperty(res('index.js')));
-      assert(app.views.pages.hasOwnProperty(res('package.json')));
-    });
-
-    it('should decorate a loadViews method onto the collection:', function() {
-      app.create('pages')
-        .use(loader())
         .loadViews('*.json')
         .loadViews('*.js');
 
@@ -134,7 +134,17 @@ describe('loader', function() {
       assert(app.views.pages.hasOwnProperty(res('fixtures/a.txt')));
     });
 
-    it('should update `addViews` to load globs:', function() {
+    it('collection.loadViews should be chainable', function() {
+      app.create('pages')
+        .use(loader())
+        .loadViews('*.json')
+        .loadViews('*.js');
+
+      assert(app.views.pages.hasOwnProperty(res('index.js')));
+      assert(app.views.pages.hasOwnProperty(res('package.json')));
+    });
+
+    it('should patch `addViews` to support globs:', function() {
       app.create('pages')
         .use(loader());
 
@@ -171,7 +181,7 @@ describe('loader', function() {
       assert(app.views.pages.hasOwnProperty('c'));
     });
 
-    it('should not change native behavior with addViews:', function() {
+    it('should maintain backwards compatibility with addViews:', function() {
       app.create('pages')
         .use(loader());
 
@@ -195,7 +205,7 @@ describe('loader', function() {
       assert.equal(page.contents.toString(), 'This is AAA');
     });
 
-    it('should support passing renameKey on the options:', function() {
+    it('should take a custom renameKey function on the options:', function() {
       app.create('pages')
         .use(loader());
 
@@ -204,7 +214,6 @@ describe('loader', function() {
       });
 
       app.pages.loadViews('fixtures/*.txt');
-
       assert(app.views.pages.hasOwnProperty('a.txt'));
     });
 
@@ -279,7 +288,6 @@ describe('loader', function() {
           return path.basename(key);
         }
       });
-
       collection.use(loader());
     });
 

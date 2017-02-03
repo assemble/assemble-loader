@@ -9,14 +9,11 @@ var utils = require('lazy-cache')(require);
 var fn = require;
 require = utils;
 require('extend-shallow', 'extend');
-require('file-contents', 'contents');
-require('fs-exists-sync', 'exists');
-require('has-glob');
 require('is-registered');
 require('is-valid-glob');
 require('is-valid-instance');
 require('isobject', 'isObject');
-require('load-templates', 'loader');
+require('load-templates', 'Loader');
 require = fn;
 
 /**
@@ -34,56 +31,11 @@ utils.isValid = function(app) {
 };
 
 /**
- * Return `true` if the given value is a glob pattern or has a
- * glob pattern if it's an array
+ * Return true if obj is a View instance
  */
 
-utils.isGlob = function(key, val) {
-  if (typeof val === 'undefined' || utils.isObject(val)) {
-    return utils.hasGlob(key);
-  }
-  return false;
-};
-
-/**
- * Return true if the given value is an object.
- * @return {Boolean}
- */
-
-utils.hasAny = function(obj, keys) {
-  var len = keys.length;
-  while (len--) {
-    if (obj.hasOwnProperty(keys[len])) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Return true if the given value looks like an options
- * object.
- */
-
-utils.isOptions = function(val) {
-  if (!utils.isObject(val)) {
-    return false;
-  }
-  if (val.isView || val.isItem || val._isVinyl) {
-    return false;
-  }
-  return utils.hasAny(val, ['base', 'cwd']);
-};
-
-/**
- * Return true if a key looks like a valid filepath,
- * not a glob pattern or the key for a view object
- * and not a view.
- */
-
-utils.isFilepath = function(key, value) {
-  return (typeof key === 'string' && typeof value === 'undefined')
-    || utils.isOptions(value);
+utils.isView = function(obj) {
+  return utils.isObject(obj) && (obj.path || obj.contents || obj.isView || obj.isItem);
 };
 
 /**

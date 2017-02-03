@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var matter = require('parser-front-matter');
 var templates = require('templates');
-var loader = require('./index2');
+var loader = require('..');
 
 var app = templates();
 
@@ -19,7 +19,7 @@ app.onLoad(/\.(hbs|tmpl)$/, function (view, next) {
 
 var posts = app
   .create('posts')
-  .use(loader('fixtures/*.hbs'))
+  .use(loader(path.join(__dirname, '../fixtures/*.hbs')))
   // .load('fixtures/*.hbs');
 
 var pages = app
