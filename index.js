@@ -85,7 +85,8 @@ function collectionLoader(collection, config) {
     if (utils.isFilepath(key, value)) {
       return this.loadView.apply(this, arguments);
     }
-    return addView.apply(this, arguments);
+    var view = addView.apply(this, arguments);
+    return utils.contents.sync(view);
   });
 
   collection.define('addViews', function(key, value) {
@@ -109,12 +110,7 @@ function collectionLoader(collection, config) {
 
     var opts = createOptions(this, config, options);
     var absolute = path.resolve(opts.cwd, filepath);
-    var buf = null;
-
-    if (utils.exists(absolute)) {
-      buf = fs.readFileSync(absolute);
-    }
-    return this.addView(absolute, {contents: buf});
+    return this.addView(absolute, {contents: null});
   });
 
   collection.define('loadViews', function(patterns, options) {
