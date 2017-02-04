@@ -60,12 +60,26 @@ function appLoader(app, config) {
   app.define('load', load('view', config));
 }
 
-
 /**
  * Collection loaders
  */
 
 function collectionLoader(collection, config) {
+  collection._addView = collection.addView.bind(collection);
+
+  /**
+   * Patches the `.addViews` method to support glob patterns.
+   *
+   * @param {Object|String} `key` View name or object.
+   * @param {Object} `value` View options, when key is a string.
+   * @return {Object}
+   */
+
+  collection.define('addView', function(key, value) {
+    var view = this._addView.apply(this, arguments);
+    utils.contents.sync(view);
+    return view;
+  });
 
   /**
    * Patches the `.addViews` method to support glob patterns.
@@ -91,7 +105,7 @@ function collectionLoader(collection, config) {
   });
 
   collection.define('load', function() {
-    return load('addView', config).apply(this, arguments);
+    return load('_addView', config).apply(this, arguments);
   });
 }
 

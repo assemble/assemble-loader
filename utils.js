@@ -9,6 +9,7 @@ var utils = require('lazy-cache')(require);
 var fn = require;
 require = utils;
 require('extend-shallow', 'extend');
+require('file-contents', 'contents');
 require('is-registered');
 require('is-valid-glob');
 require('is-valid-instance');
