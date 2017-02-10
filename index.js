@@ -58,11 +58,12 @@ function loader(patterns, config) {
 
 function appLoader(app, config) {
   app.define('load', load('view', config));
-  var emit = app.emit;
+  var fn = app.view;
 
-  app.define('emit', function(name, view) {
-    if (name === 'view') utils.contents.sync(view);
-    emit.apply(app, arguments);
+  app.define('view', function() {
+    var view = fn.apply(this, arguments);
+    utils.contents.sync(view);
+    return view;
   });
 }
 
