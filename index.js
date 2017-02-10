@@ -58,6 +58,12 @@ function loader(patterns, config) {
 
 function appLoader(app, config) {
   app.define('load', load('view', config));
+  var emit = app.emit;
+
+  app.define('emit', function(name, view) {
+    if (name === 'view') utils.contents.sync(view);
+    emit.apply(app, arguments);
+  });
 }
 
 /**
@@ -76,9 +82,7 @@ function collectionLoader(collection, config) {
    */
 
   collection.define('addView', function(key, value) {
-    var view = this._addView.apply(this, arguments);
-    utils.contents.sync(view);
-    return view;
+    return this._addView.apply(this, arguments);
   });
 
   /**

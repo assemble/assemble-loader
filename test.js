@@ -26,7 +26,9 @@ describe('loader', function() {
 
     it('should decorate `.load` onto the app instance', function() {
       app.use(loader());
-      var collection = app.load('*.js');
+      var view = app.view({path: 'index.js'});
+
+      var collection = app.load('*.js', {cwd: __dirname});
       assert(collection.hasOwnProperty(res('index.js')));
     });
 
