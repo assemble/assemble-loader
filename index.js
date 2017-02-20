@@ -73,6 +73,13 @@ function appLoader(app, config) {
 
 function collectionLoader(collection, config) {
   collection._addView = collection.addView.bind(collection);
+  var fn = collection.view;
+
+  collection.define('view', function() {
+    var view = fn.apply(this, arguments);
+    utils.contents.sync(view);
+    return view;
+  });
 
   /**
    * Patches the `.addViews` method to support glob patterns.
@@ -83,9 +90,7 @@ function collectionLoader(collection, config) {
    */
 
   collection.define('addView', function(key, value) {
-    var view = this._addView.apply(this, arguments);
-    utils.contents.sync(view);
-    return view;
+    return this._addView.apply(this, arguments);
   });
 
   /**
