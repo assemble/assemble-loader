@@ -83,7 +83,9 @@ function collectionLoader(collection, config) {
    */
 
   collection.define('addView', function(key, value) {
-    return this._addView.apply(this, arguments);
+    var view = this._addView.apply(this, arguments);
+    utils.contents.sync(view);
+    return view;
   });
 
   /**
